@@ -745,7 +745,8 @@ class AwsBackend(AvhBackend):
             # commands which do not need to go to INFO
             commands = [
                 f"runuser -l ubuntu -c 'aws s3 cp s3://{self.s3_bucket_name}/{shfile.name} "
-                f"{self.AMI_WORKDIR}/{shfile.name} && chmod +x {self.AMI_WORKDIR}/{shfile.name}'"
+                f"{self.AMI_WORKDIR}/{shfile.name} --region {os.environ['AWS_DEFAULT_REGION']} && "
+                f"chmod +x {self.AMI_WORKDIR}/{shfile.name}'"
             ]
             self.send_remote_command_batch(
                 commands,
@@ -775,7 +776,7 @@ class AwsBackend(AvhBackend):
         try:
             self.upload_file_to_cloud(str(filename), filename.name)
             commands = [
-                f"runuser -l ubuntu -c 'aws s3 cp s3://{self.s3_bucket_name}/{filename.name} {self.AMI_WORKDIR}/{filename.name}'",
+                f"runuser -l ubuntu -c 'aws s3 cp s3://{self.s3_bucket_name}/{filename.name} {self.AMI_WORKDIR}/{filename.name} --region {os.environ['AWS_DEFAULT_REGION']}'",
                 f"runuser -l ubuntu -c 'cd {self.AMI_WORKDIR}/workspace; tar xf {self.AMI_WORKDIR}/{filename.name}'",
                 f"runuser -l ubuntu -c 'rm -f {self.AMI_WORKDIR}/{filename.name}'"
             ]
@@ -804,7 +805,7 @@ class AwsBackend(AvhBackend):
 
             commands = [
                 f"runuser -l ubuntu -c 'cd {self.AMI_WORKDIR}/workspace; {'; '.join(tarbz2)}'",
-                f"runuser -l ubuntu -c 'aws s3 cp {self.AMI_WORKDIR}/{filename.stem}.tar.bz2 s3://{self.s3_bucket_name}/{filename.name}'",
+                f"runuser -l ubuntu -c 'aws s3 cp {self.AMI_WORKDIR}/{filename.stem}.tar.bz2 s3://{self.s3_bucket_name}/{filename.name} --region {os.environ['AWS_DEFAULT_REGION']}'",
                 f"runuser -l ubuntu -c 'rm -f {self.AMI_WORKDIR}/{filename.stem}.tar.bz2'",
             ]
             self.send_remote_command_batch(
@@ -875,7 +876,8 @@ class AwsBackend(AvhBackend):
             logging.info(info_desc) if enable_logging_info else logging.debug(info_desc)
 
         if response['CommandIdStatus'] != 'Success' and fail_if_unsuccess:
-            logging.error("aws:send_remote_command:Command %s failed!", command_list)
+            logging.error("aws:send_remote_command:Command %s!", command_list)
+            logging.error("aws:send_remote_command:response \n%s", response)
             raise RuntimeError()
         return response
 
